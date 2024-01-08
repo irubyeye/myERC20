@@ -1,0 +1,67 @@
+<?xml version="1.0" standalone="no"?>
+<svg xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink" width="335pt" height="188pt" viewBox="0.00 0.00 334.91 188.00">
+<g id="graph0" class="graph" transform="translate(4,184) scale(1)" data-name="G">
+
+<polygon fill="white" stroke="none" points="-4,4 -4,-184 330.91,-184 330.91,4 -4,4" style=""/>
+<!-- MyERC20 -->
+<g id="node1" class="node" pointer-events="visible" data-name="MyERC20">
+
+<ellipse fill="none" stroke="black" cx="95.69" cy="-162" rx="52.78" ry="18" style=""/>
+<text text-anchor="middle" x="95.69" y="-157.8" font-family="Times,serif" font-size="14.00" style="">MyERC20</text>
+</g>
+<!-- IERC20 -->
+<g id="node2" class="node" pointer-events="visible" data-name="IERC20">
+
+<ellipse fill="none" stroke="rgb(229,229,229)" cx="42.69" cy="-90" rx="42.88" ry="18" style=""/>
+<text text-anchor="middle" x="42.69" y="-85.8" font-family="Times,serif" font-size="14.00" style="">IERC20</text>
+</g>
+<!-- MyERC20&#45;&gt;IERC20 -->
+<g id="edge1" class="edge" data-name="MyERC20-&gt;IERC20">
+
+<path fill="none" stroke="rgb(229,229,229)" d="M77.6,-144.76C70.58,-136.7 62.79,-126.74 56.25,-117.6" style=""/>
+<polygon fill="rgb(229,229,229)" stroke="rgb(229,229,229)" points="59.16,-115.64 50.61,-109.37 53.38,-119.6 59.16,-115.64" style=""/>
+</g>
+<!-- MyERC20&#45;&gt;IERC20 -->
+<g id="edge4" class="edge" data-name="MyERC20-&gt;IERC20">
+
+<path fill="none" stroke="rgb(229,229,229)" d="M88.5,-143.7C82.89,-135.11 75.1,-124.58 67.48,-115.21" style=""/>
+<polygon fill="rgb(229,229,229)" stroke="rgb(229,229,229)" points="70.38,-113.23 61.27,-107.83 65.03,-117.73 70.38,-113.23" style=""/>
+</g>
+<!-- Ownable -->
+<g id="node3" class="node" pointer-events="visible" data-name="Ownable">
+
+<ellipse fill="none" stroke="black" cx="149.69" cy="-90" rx="45.79" ry="18" style=""/>
+<text text-anchor="middle" x="149.69" y="-85.8" font-family="Times,serif" font-size="14.00" style="">Ownable</text>
+</g>
+<!-- MyERC20&#45;&gt;Ownable -->
+<g id="edge2" class="edge" data-name="MyERC20-&gt;Ownable">
+
+<path fill="none" stroke="black" d="M103.12,-143.7C108.86,-135.11 116.8,-124.58 124.56,-115.21" style=""/>
+<polygon fill="black" stroke="black" points="127.04,-117.69 130.88,-107.82 121.72,-113.14 127.04,-117.69" style=""/>
+</g>
+<!-- MyERC20&#45;&gt;Ownable -->
+<g id="edge5" class="edge" data-name="MyERC20-&gt;Ownable">
+
+<path fill="none" stroke="black" d="M114.02,-144.76C121.22,-136.61 129.25,-126.53 135.96,-117.31" style=""/>
+<polygon fill="black" stroke="black" points="138.65,-119.57 141.51,-109.36 132.91,-115.55 138.65,-119.57" style=""/>
+</g>
+<!-- Context -->
+<g id="node4" class="node" pointer-events="visible" data-name="Context">
+
+<ellipse fill="none" stroke="black" cx="149.69" cy="-18" rx="41.73" ry="18" style=""/>
+<text text-anchor="middle" x="149.69" y="-13.8" font-family="Times,serif" font-size="14.00" style="">Context</text>
+</g>
+<!-- Ownable&#45;&gt;Context -->
+<g id="edge3" class="edge" data-name="Ownable-&gt;Context">
+
+<path fill="none" stroke="black" d="M149.69,-71.7C149.69,-64.41 149.69,-55.73 149.69,-47.54" style=""/>
+<polygon fill="black" stroke="black" points="153.19,-47.62 149.69,-37.62 146.19,-47.62 153.19,-47.62" style=""/>
+</g>
+<!-- TransparentProxy -->
+<g id="node5" class="node" pointer-events="visible" data-name="TransparentProxy">
+
+<ellipse fill="none" stroke="rgb(229,229,229)" cx="246.69" cy="-162" rx="80.45" ry="18" style=""/>
+<text text-anchor="middle" x="246.69" y="-157.8" font-family="Times,serif" font-size="14.00" style="">TransparentProxy</text>
+</g>
+</g>
+</svg>
