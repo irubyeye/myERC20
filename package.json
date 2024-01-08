@@ -5,7 +5,8 @@
   "main": "index.js",
   "scripts": {
     "solhint": "./node_modules/.bin/solhint -f table contracts/**/*.sol",
-    "prettier:solidity": "prettier --write --plugin=prettier-plugin-solidity 'contracts/**/*.sol'"
+    "prettier:solidity": "prettier --write --plugin=prettier-plugin-solidity 'contracts/**/*.sol'",
+    "coverage": "COVERAGE=true npx hardhat coverage"
   },
   "author": "",
   "license": "ISC",
@@ -26,12 +27,13 @@
   },
   "dependencies": {
     "@openzeppelin/contracts": "^5.0.1",
-    "ethers": "^6.9.2"
+    "ethers": "^6.9.2",
+    "solidity-coverage": "^0.8.5"
   },
   "husky": {
     "hooks": {
       "pre-push": "npm run prettier:solidity",
-      "pre-commit": "lint-staged",
+      "pre-commit": "lint-staged npm run prettier:solidity",
       "commit-msg": "commitlint -E HUSKY_GIT_PARAMS"
     }
   },

@@ -116,6 +116,15 @@ describe("myERC20", function () {
       ).to.be.reverted;
     });
 
+    it("Should not allow to transfer from if balance is lt transfer amount", async () => {
+      const amount: bigint = BigInt(10000000000);
+
+      await myERC20.connect(owner).approve(user1.address, amount);
+      await expect(
+        myERC20.connect(user1).transferFrom(owner.address, user2.address, amount),
+      ).to.be.rejectedWith("Not enough tokens!");
+    });
+
     it("Should allow transferFrom if allowed", async () => {
       const amount: bigint = BigInt(100);
 
@@ -170,6 +179,10 @@ describe("myERC20", function () {
       ).to.be.revertedWith("Value must be greater than 0!");
     });
 
+    it("Should deny user to buy tokens if user address is 0", async () => {
+      await expect(myERC20.testMintToZero()).to.be.revertedWith("Recipient can not be 0!");
+    });
+
     it("Should allow user to sell tokens", async () => {
       const votePrice: bigint = BigInt(1500000000);
       const sellAmount: bigint = BigInt(15000000);
@@ -193,6 +206,24 @@ describe("myERC20", function () {
       const finalEthBalance = await ethers.provider.getBalance(owner.address);
 
       expect(finalEthBalance).to.be.above(initialEthBalance);
+    });
+
+    it("Should deny to burn tokens from the address 0", async () => {
+      await expect(myERC20.testZeroBurn()).to.be.reverted;
+    });
+
+    it("Should deny to burn more tokens than user has", async () => {
+      await expect(myERC20.burnGtBalance(user1.address)).to.be.reverted;
+    });
+
+    it("Should mint 1 tok if 1 tok was burnt by test function", async () => {
+      const initialBalance = await myERC20.balanceOf(owner.address);
+
+      await myERC20.burnGtBalance(owner.address);
+
+      const finalBalance = await myERC20.balanceOf(owner.address);
+
+      expect(finalBalance).is.eql(initialBalance);
     });
 
     it("Should not allow user to sell tokens if selling amount gt user balance", async () => {
@@ -277,6 +308,60 @@ describe("myERC20", function () {
       expect(tokenPrice).to.equal(expectedTokenPrice);
     });
 
+    it("Should set the most 'powerful' price", async () => {
+      const votePrices: number[] = [150, 200];
+
+      const user1Transfer: number = 30000000;
+      const user2Transfer: number = 10000000;
+
+      await myERC20.connect(owner).transfer(user1.address, user1Transfer);
+      await myERC20.connect(owner).transfer(user2.address, user2Transfer);
+
+      await myERC20.connect(user1).vote(votePrices[0]);
+      await myERC20.connect(user2).vote(votePrices[0]);
+      await myERC20.connect(owner).vote(votePrices[1]);
+
+      const votingPrice: bigint = await myERC20._getVotingPrice();
+
+      const expectedVotingPrice: bigint = BigInt(votePrices[1]);
+
+      expect(votingPrice).to.equal(expectedVotingPrice);
+    });
+
+    it("Should get power of price in current voting", async () => {
+      const votePrices: number[] = [150, 200];
+
+      const user1Transfer: number = 30000000;
+
+      await myERC20.connect(owner).transfer(user1.address, user1Transfer);
+      await myERC20.connect(user1).vote(votePrices[0]);
+
+      const user1PricePower: bigint = await myERC20._getPowerOfVotingPrice(votePrices[0]);
+
+      const votingId: bigint = await myERC20.getVotingId();
+      expect(votingId).is.gt(0);
+
+      await myERC20.connect(owner).vote(votePrices[1]);
+      const ownerPricePower: bigint = await myERC20._getPowerOfVotingPrice(votePrices[1]);
+
+      expect(ownerPricePower).to.be.gt(user1PricePower);
+
+      await expect(await myERC20._getVotingPrice()).to.eq(votePrices[1]);
+    });
+
+    it("Should", async () => {
+      const votePrices: number[] = [150, 200];
+
+      const user1Transfer: number = 1000000;
+
+      await myERC20.connect(owner).transfer(user1.address, user1Transfer);
+
+      await myERC20.connect(owner).vote(votePrices[1]);
+
+      await myERC20.connect(user1).vote(votePrices[0]);
+      expect(await myERC20._getVotingPrice()).to.eq(votePrices[1]);
+    });
+
     it("Should deny end voting before it period expired", async () => {
       const votePrice: bigint = BigInt(100);
       const user1Transfer: bigint = BigInt(40000000);
@@ -302,6 +387,19 @@ describe("myERC20", function () {
       await expect(myERC20.connect(user1).vote(votePrice)).to.be.revertedWith(
         "Voting period has ended! Summing up results...",
       );
+    });
+
+    it("Should not allow to transfer by allowance when user is in voting", async () => {
+      const votePrice: bigint = BigInt(100);
+      const amount: bigint = BigInt(100);
+
+      await myERC20.vote(votePrice);
+
+      await myERC20.connect(owner).approve(user1.address, amount);
+
+      await expect(
+        myERC20.connect(user1).transferFrom(owner.address, user2.address, amount),
+      ).to.be.revertedWith("You can not perform this because owner is in voting!");
     });
 
     it("Should deny to transfer tokens if person voted and voting hasn't ended yet.", async () => {
@@ -338,6 +436,16 @@ describe("myERC20", function () {
   });
 
   describe("Fee operations", () => {
+    it("Should allow only owner to set fee percentage", async () => {
+      await expect(myERC20.connect(user1).setBuySellFeePercentage(10)).to.be.reverted;
+    });
+
+    it("Should allow to set only proper fee percentage", async () => {
+      await expect(myERC20.connect(owner).setBuySellFeePercentage(110)).to.be.revertedWith(
+        "Percentage must be less than or equal to 100",
+      );
+    });
+
     it("Should collect fees from buying operations", async function () {
       const votePrice: bigint = BigInt(100);
       const ethersSent: bigint = BigInt(1);

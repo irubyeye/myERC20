@@ -90,11 +90,35 @@ contract MyERC20 is IERC20, Ownable {
     }
 
     /**
+     * @dev Function to get the current or last voting id.
+     * @return The voting id.
+     */
+    function getVotingId() external view returns (uint256) {
+        return _votingId;
+    }
+
+    /**
      * @dev Function to get the current token price.
      * @return The current token price.
      */
     function _getTokenPrice() external view returns (uint256) {
         return _tokenPrice;
+    }
+
+    /**
+     * @dev Function to get the current leader voting price.
+     * @return The current token price.
+     */
+    function _getVotingPrice() external view returns (uint256) {
+        return _votePrice;
+    }
+
+    /**
+     * @dev Function to get the price power.
+     * @return The power of certain price in the current voting.
+     */
+    function _getPowerOfVotingPrice(uint256 _price) external view returns (uint256) {
+        return _pricePower[_votingId][_price];
     }
 
     /**
@@ -165,7 +189,11 @@ contract MyERC20 is IERC20, Ownable {
         address _sender,
         address _recipient,
         uint256 _amount
-    ) external isNotInVoting returns (bool) {
+    ) external returns (bool) {
+        require(
+            !(_isVotingInProgress[_votingId] && _isVoted[_sender] == _votingId),
+            "You can not perform this because owner is in voting!"
+        );
         require(_balances[_sender] >= _amount, "Not enough tokens!");
         require(_allowances[_sender][msg.sender] >= _amount);
 
@@ -198,7 +226,10 @@ contract MyERC20 is IERC20, Ownable {
      * @param _percentage The new buy and sell fee percentage.
      */
     function setBuySellFeePercentage(uint256 _percentage) external onlyOwner {
-        require(_percentage <= 100, "Percentage must be less than or equal to 100");
+        require(
+            _percentage <= 100 && _percentage >= 0,
+            "Percentage must be less than or equal to 100"
+        );
         _buySellFeePercentage = _percentage;
     }
 
@@ -213,6 +244,13 @@ contract MyERC20 is IERC20, Ownable {
     }
 
     /**
+     * @dev Test function to assume that tokens cannot be minted at 0x address.
+     */
+    function testMintToZero() external {
+        _mint(address(0), 0);
+    }
+
+    /**
      * @dev Function to burn tokens from an account.
      */
     function _burn(address account, uint256 amount) internal {
@@ -222,6 +260,21 @@ contract MyERC20 is IERC20, Ownable {
         _totalSupply -= amount;
         _balances[account] -= amount;
         emit Transfer(account, address(0), amount);
+    }
+
+    /**
+     * @dev Test function to assume that tokens cannot be burnt from 0x address.
+     */
+    function testZeroBurn() external {
+        _burn(address(0), 0);
+    }
+
+    /**
+     * @dev Test function to assume that amount tokens to burn is always lt balance
+     */
+    function burnGtBalance(address _address) external {
+        _burn(_address, 1);
+        _mint(_address, 1);
     }
 
     /**
@@ -289,7 +342,7 @@ contract MyERC20 is IERC20, Ownable {
 
         _pricePower[_votingId][_price] += _balances[msg.sender];
 
-        if (_pricePower[_votingId][_price] > _votePrice) {
+        if (_pricePower[_votingId][_price] > _pricePower[_votingId][_votePrice]) {
             _votePrice = _price;
         }
 
