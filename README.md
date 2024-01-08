@@ -10,9 +10,20 @@ npx hardhat node
 npx hardhat run scripts/deploy.ts
 ```
 
-# Sūrya's Description Report
+Sūrya's Description Report
 
-## Contracts Description Table
+Files Description Table
+
+| File Name                                                                                                                      | SHA-1 Hash                               |
+| ------------------------------------------------------------------------------------------------------------------------------ | ---------------------------------------- |
+| /Users/nikolaj/Desktop/Рабочий_стол/Redduck/milestone2_Final/v.0.1/contracts/myERC20.sol                                       | fb3ba01baaa9d1a8ea10a5f4c555ae1517cd0f6c |
+| /Users/nikolaj/Desktop/Рабочий_стол/Redduck/milestone2_Final/v.0.1/node_modules/@openzeppelin/contracts/token/ERC20/IERC20.sol | bf7591fac4cca9756c1868273bcd2ce75122a00d |
+| /Users/nikolaj/Desktop/Рабочий_стол/Redduck/milestone2_Final/v.0.1/node_modules/@openzeppelin/contracts/access/Ownable.sol     | 62f94c544a5dddf6f78fffa49350f2c163c46883 |
+| /Users/nikolaj/Desktop/Рабочий_стол/Redduck/milestone2_Final/v.0.1/node_modules/@openzeppelin/contracts/utils/Context.sol      | 5e3293ce0ece50787f1c9e8cd38fbcf16c730c63 |
+| /Users/nikolaj/Desktop/Рабочий_стол/Redduck/milestone2_Final/v.0.1/contracts/proxyContract.sol                                 | 90ea02ae63f18ec7d8d9fadedeaef04c7d315ea1 |
+| /Users/nikolaj/Desktop/Рабочий_стол/Redduck/milestone2_Final/v.0.1/contracts/MyERC20.sol                                       | fb3ba01baaa9d1a8ea10a5f4c555ae1517cd0f6c |
+
+Contracts Description Table
 
 |       Contract       |          Type           |      Bases      |                |                |
 | :------------------: | :---------------------: | :-------------: | :------------: | :------------: |
@@ -92,9 +103,8 @@ Legend
 
 # Call Graph
 
-![![Alt text](../../../../../Downloads/callgraph.svg)](graphs/callgraph.svg)
+![Alt text](../../../../../Downloads/callgraph.svg)
 
 # Inheritance Graph
 
-![![Alt text](../../../../../Downloads/inheritance.svg)
-](graphs/inheritance.svg)
+![Alt text](../../../../../Downloads/inheritance.svg)
