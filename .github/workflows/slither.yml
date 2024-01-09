@@ -1,0 +1,32 @@
+name: Slither Analysis
+
+on:
+  push:
+    branches:
+      - main
+      - dev
+  workflow_dispatch: {}
+  pull_request: {}
+
+jobs:
+  analyze:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v3
+      - uses: actions/setup-node@v3
+        with:
+          node-version: "16"
+      - uses: actions/cache@v3
+        id: cache
+        with:
+          path: "**/node_modules"
+          key: ${{ runner.os }}-yarn-${{ hashFiles('**/yarn.lock') }}
+          restore-keys: ${{ runner.os }}-yarn-
+      - name: Install project dependencies
+        if: steps.cache.outputs.cache-hit != 'true'
+        run: yarn
+      - name: Clean project
+        run: yarn clean
+      - uses: crytic/slither-action@v0.1.1
+        with:
+          node-version: "19"

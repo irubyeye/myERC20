@@ -349,7 +349,7 @@ describe("myERC20", function () {
       await expect(await myERC20._getVotingPrice()).to.eq(votePrices[1]);
     });
 
-    it("Should", async () => {
+    it("Should not change the leader price", async () => {
       const votePrices: number[] = [150, 200];
 
       const user1Transfer: number = 1000000;

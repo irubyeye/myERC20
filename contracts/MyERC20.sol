@@ -9,38 +9,105 @@ import "../node_modules/@openzeppelin/contracts/access/Ownable.sol";
  * @dev A simple ERC-20 token with additional features like voting and fee collection.
  */
 contract MyERC20 is IERC20, Ownable {
-    // Token balances of all addresses
+    /**
+     * @dev Mapping to save user balanses.
+     */
     mapping(address => uint256) private _balances;
 
-    // Allowances for token transfers
+    /**
+     * @dev Allowances for token transfers
+     */
     mapping(address => mapping(address => uint256)) private _allowances;
 
-    // Mapping to store whether an address has voted in a specific voting round
+    /**
+     * @dev Mapping to store whether an address has voted in a specific voting round
+     */
     mapping(address => uint256) private _isVoted;
 
-    // Price power for each address in a specific voting round
+    /**
+     * @dev Price power for each address in a specific voting round
+     */
     mapping(uint256 => mapping(uint256 => uint256)) private _pricePower;
 
-    // Flag to indicate whether a voting round is in progress
+    /**
+     * @dev Flag to indicate whether a voting round is in progress
+     */
     mapping(uint256 => bool) private _isVotingInProgress;
 
-    // Token-related parameters
+    /**
+     * @dev Current token price variable
+     */
     uint256 private _tokenPrice;
+
+    /**
+     * @dev Total supply of the tokens in system
+     */
     uint256 private _totalSupply;
+
+    /**
+     * @dev Current Fee percentage
+     * @notice Fee applies only on selling and buying operations
+     */
     uint256 private _buySellFeePercentage;
+
+    /**
+     * @dev Timestamp of the last fee collection time
+     */
     uint256 private _lastFeeCollectionTime;
+
+    /**
+     * @dev Period of time in seconds for the voting
+     */
     uint256 private _timeToVote;
+
+    /**
+     * @dev Current leader voting price
+     */
     uint256 private _votePrice;
+
+    /**
+     * @dev Id of the last or current voting
+     */
     uint256 private _votingId;
+
+    /**
+     * @dev Timestamp of the moment when the voting will be ended
+     */
     uint256 private _votingEndTime;
 
-    // Events
+    /**
+     * @dev Emits when user votes
+     */
     event Voted(address indexed voter, uint256 indexed price, uint256 indexed votePrice);
+
+    /**
+     * @dev Emits when user starts voting
+     */
     event VotingStarted(uint256 startTime, uint256 endTime, uint256 indexed votePrice);
+
+    /**
+     * @dev Emits when user ends voting
+     */
     event VotingEnded(uint256 endTime, uint256 indexed votePrice);
+
+    /**
+     * @dev Emits when user buys tokens
+     */
     event Buy(address indexed buyer, uint256 amount, uint256 cost);
+
+    /**
+     * @dev Emits when user sell tokens
+     */
     event Sell(address indexed seller, uint256 amount, uint256 earnings);
+
+    /**
+     * @dev Emits when fee is collected
+     */
     event FeeCollected(uint256 feeAmount);
+
+    /**
+     * @dev Emits when collected fees are burnt
+     */
     event FeeBurned(uint256 feeBurned);
 
     /**

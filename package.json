@@ -6,7 +6,9 @@
   "scripts": {
     "solhint": "./node_modules/.bin/solhint -f table contracts/**/*.sol",
     "prettier:solidity": "prettier --write --plugin=prettier-plugin-solidity 'contracts/**/*.sol'",
-    "coverage": "COVERAGE=true npx hardhat coverage"
+    "coverage": "COVERAGE=true npx hardhat coverage",
+    "deploy-sepolia": "npx hardhat deploy --network sepolia",
+    "deploy-hardhat": "npx hardhat deploy"
   },
   "author": "",
   "license": "ISC",
