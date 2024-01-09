@@ -1,5 +1,5 @@
-require('@nomicfoundation/hardhat-toolbox');
 import { task, types } from 'hardhat/config';
+require('@nomicfoundation/hardhat-toolbox');
 
 task('deploy', 'Deploying a smart contract').setAction(
   async (taskArgs, hre) => {

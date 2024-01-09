@@ -1,1 +1,7 @@
 commitlint.config.js
+node_modules
+artifacts
+cache
+coverage*
+gasReporterOutput.json
+typechain
