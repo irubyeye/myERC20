@@ -15,7 +15,7 @@ describe("myERC20", function () {
   beforeEach(async () => {
     [owner, user1, user2] = await ethers.getSigners();
 
-    const MyERC20Factory: MyERC20__factory = await ethers.getContractFactory("MyERC20");
+    const MyERC20Factory: any = await ethers.getContractFactory("MyERC20");
     myERC20 = await MyERC20Factory.deploy(3600);
   });
 
