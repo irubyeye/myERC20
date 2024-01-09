@@ -1,0 +1,26 @@
+{
+  "env": {
+    "browser": false,
+    "es2021": true,
+    "mocha": true,
+    "node": true
+  },
+  "plugins": ["@typescript-eslint"],
+  "extends": ["standard", "plugin:prettier/recommended"],
+  "parser": "@typescript-eslint/parser",
+  "rules": {
+    "import/order": [
+      "error",
+      {
+        "alphabetize": {
+          "order": "asc",
+          "caseInsensitive": true
+        },
+        "groups": ["external", "builtin", "index", "sibling", "parent", "internal", "object"],
+        "newlines-between": "always"
+      }
+    ],
+    "node/no-unsupported-features/es-syntax": ["error", { "ignores": ["modules"] }],
+    "camelcase": "off"
+  }
+}
