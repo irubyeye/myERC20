@@ -78,12 +78,20 @@ contract MyERC20 is IERC20, Ownable {
     /**
      * @dev Emits when user votes
      */
-    event Voted(address indexed voter, uint256 indexed price, uint256 indexed votePrice);
+    event Voted(
+        address indexed voter,
+        uint256 indexed price,
+        uint256 indexed votePrice
+    );
 
     /**
      * @dev Emits when user starts voting
      */
-    event VotingStarted(uint256 startTime, uint256 endTime, uint256 indexed votePrice);
+    event VotingStarted(
+        uint256 startTime,
+        uint256 endTime,
+        uint256 indexed votePrice
+    );
 
     /**
      * @dev Emits when user ends voting
@@ -123,7 +131,10 @@ contract MyERC20 is IERC20, Ownable {
      * @dev Modifier to check if the caller is eligible to vote.
      */
     modifier canVote() {
-        require(_balances[msg.sender] >= getMinTokenAmountToVote(), "You can not vote!");
+        require(
+            _balances[msg.sender] >= getMinTokenAmountToVote(),
+            "You can not vote!"
+        );
         _;
     }
 
@@ -132,7 +143,8 @@ contract MyERC20 is IERC20, Ownable {
      */
     modifier isNotInVoting() {
         require(
-            !(_isVotingInProgress[_votingId] && _isVoted[msg.sender] == _votingId),
+            !(_isVotingInProgress[_votingId] &&
+                _isVoted[msg.sender] == _votingId),
             "You are not allowed perform this during the voting!"
         );
         _;
@@ -184,7 +196,9 @@ contract MyERC20 is IERC20, Ownable {
      * @dev Function to get the price power.
      * @return The power of certain price in the current voting.
      */
-    function _getPowerOfVotingPrice(uint256 _price) external view returns (uint256) {
+    function _getPowerOfVotingPrice(
+        uint256 _price
+    ) external view returns (uint256) {
         return _pricePower[_votingId][_price];
     }
 
@@ -211,8 +225,14 @@ contract MyERC20 is IERC20, Ownable {
      * @param _amount The amount of tokens to transfer.
      * @return A boolean indicating the success of the transfer.
      */
-    function transfer(address _recipient, uint256 _amount) external isNotInVoting returns (bool) {
-        require(_balances[msg.sender] >= _amount, "Not enough tokens to transfer!");
+    function transfer(
+        address _recipient,
+        uint256 _amount
+    ) external isNotInVoting returns (bool) {
+        require(
+            _balances[msg.sender] >= _amount,
+            "Not enough tokens to transfer!"
+        );
         require(_recipient != address(0), "Recipient can not be 0!");
 
         _balances[msg.sender] -= _amount;
@@ -228,7 +248,10 @@ contract MyERC20 is IERC20, Ownable {
      * @param _spender The spender's address.
      * @return The allowance for the specified spender.
      */
-    function allowance(address _owner, address _spender) external view returns (uint256) {
+    function allowance(
+        address _owner,
+        address _spender
+    ) external view returns (uint256) {
         return _allowances[_owner][_spender];
     }
 
@@ -238,7 +261,10 @@ contract MyERC20 is IERC20, Ownable {
      * @param _amount The amount to approve.
      * @return A boolean indicating the success of the approval.
      */
-    function approve(address _spender, uint256 _amount) external returns (bool) {
+    function approve(
+        address _spender,
+        uint256 _amount
+    ) external returns (bool) {
         _allowances[msg.sender][_spender] = _amount;
 
         emit Approval(msg.sender, _spender, _amount);
@@ -400,16 +426,25 @@ contract MyERC20 is IERC20, Ownable {
             _votingId++;
             _isVotingInProgress[_votingId] = true;
             _votingEndTime = block.timestamp + _timeToVote;
-            emit VotingStarted(block.timestamp, block.timestamp + _timeToVote, _votePrice);
+            emit VotingStarted(
+                block.timestamp,
+                block.timestamp + _timeToVote,
+                _votePrice
+            );
         }
 
-        require(block.timestamp < _votingEndTime, "Voting period has ended! Summing up results...");
+        require(
+            block.timestamp < _votingEndTime,
+            "Voting period has ended! Summing up results..."
+        );
 
         require(_isVoted[msg.sender] != _votingId, "Already voted!");
 
         _pricePower[_votingId][_price] += _balances[msg.sender];
 
-        if (_pricePower[_votingId][_price] > _pricePower[_votingId][_votePrice]) {
+        if (
+            _pricePower[_votingId][_price] > _pricePower[_votingId][_votePrice]
+        ) {
             _votePrice = _price;
         }
 
