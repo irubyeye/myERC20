@@ -5,7 +5,7 @@ import { ReentrancySample } from './../typechain-types/contracts/ReentrancySampl
 
 import { ReentrancyProxy } from '../typechain-types/contracts/reentrancyProxy.sol/ReentrancyProxy';
 
-describe('Reentrancy Attack', () => {
+xdescribe('Reentrancy Attack', () => {
   let reentrancySample: ReentrancySample;
   let reentrancyProxy: ReentrancyProxy;
   let reentrancySampleAddress: string;

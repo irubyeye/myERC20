@@ -11,8 +11,6 @@ xdescribe('myERC20', function () {
   let owner: any;
   let user1: any;
   let user2: any;
-  let reentrancyAddress: any;
-  let myErc20Address: any;
   const initialMint: bigint = BigInt(100000000);
 
   beforeEach(async () => {
@@ -20,20 +18,13 @@ xdescribe('myERC20', function () {
 
     const MyERC20Factory: any = await ethers.getContractFactory('MyERC20');
     myERC20 = await MyERC20Factory.deploy(3600);
-    myErc20Address = await myERC20.getAddress();
-
-    const ReentrancyProxyFactory: any =
-      await ethers.getContractFactory('ReentrancyProxy');
-    reentrancyProxy = await ReentrancyProxyFactory.deploy(user1.address);
   });
 
   describe('Deployment', () => {
     it('Should deploy myERC contract', async () => {
       const address: string = await myERC20.getAddress();
-      const addressReentr: string = await reentrancyProxy.getAddress();
 
       expect(address).to.not.equal(0);
-      expect(addressReentr).to.not.equal(0);
     });
 
     it('Should mint initial supply to owner', async () => {

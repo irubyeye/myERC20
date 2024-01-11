@@ -13,12 +13,16 @@ if (COVERAGE) {
 require('./tasks/deploy');
 
 module.exports = {
+  defaultNetwork: 'hardhat',
   solidity: '0.8.23',
   networks: {
     sepolia: {
       url: `https://sepolia.infura.io/v3/${INFURA_API_KEY}`,
       accounts: [SEPOLIA_PRIVATE_KEY],
     },
+    // hardhat: {
+    //   blockGasLimit: 200000, // Network block gasLimit
+    // },
   },
   gasReporter: {
     enabled: false,
