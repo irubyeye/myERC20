@@ -177,6 +177,14 @@ contract MyERC20 is IERC20, Ownable {
     }
 
     /**
+     * @dev Function to get the eth amount on this contract.
+     * @return Amount of ethers on contract balance.
+     */
+    function etherBalance() external view returns (uint256) {
+        return address(this).balance;
+    }
+
+    /**
      * @dev Function to get the current token price.
      * @return The current token price.
      */
