@@ -1,13 +1,10 @@
 import { expect } from 'chai';
 import { ethers, network } from 'hardhat';
 
-import { ReentrancyProxy } from './../typechain-types/contracts/reentrancyProxy.sol/ReentrancyProxy';
-
 import { MyERC20 } from '../typechain-types/contracts/MyERC20';
 
-xdescribe('myERC20', function () {
+describe.skip('myERC20', function () {
   let myERC20: MyERC20;
-  let reentrancyProxy: ReentrancyProxy;
   let owner: any;
   let user1: any;
   let user2: any;

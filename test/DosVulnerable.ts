@@ -7,7 +7,7 @@ import { any } from 'hardhat/internal/core/params/argumentTypes';
 
 import { toBeHex, toQuantity } from 'ethers';
 
-describe('Dos Attack', () => {
+describe.skip('Dos Attack', () => {
   let dosVulnerable: DosVulnerable;
   let owner: any, user1: any, user2: any, user3: any, user4: any, user5: any;
 

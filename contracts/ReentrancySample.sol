@@ -19,9 +19,9 @@ contract ReentrancySample is ReentrancyGuard {
     }
 
     function withdrawHealthy() public nonReentrant {
-        require(_balances[msg.sender] > 0, "Your deposite is 0");
         uint256 balance = _balances[msg.sender];
-        _balances[msg.sender] = 0;
+        require(balance > 0, "Your deposite is 0");
+        _balances[msg.sender] -= balance;
         payable(msg.sender).transfer(balance);
     }
 
