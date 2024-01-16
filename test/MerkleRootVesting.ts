@@ -125,11 +125,14 @@ describe('Merkle root vesting', () => {
         },
       );
 
-      await network.provider.send('evm_increaseTime', [63072001]);
+      const merkleRoot = merkleTree.getHexRoot();
+      await merkleRootVesting.setVesting(merkleRoot);
+
+      await network.provider.send('evm_increaseTime', [63072000]);
       await network.provider.send('evm_mine', []);
 
       await merkleRootVesting
-        .connect(user2)
+        .connect(user1)
         .claim(amounts[0], merkleTree.getHexProof(keccak256(vestingData)));
 
       expect(await myERC20.balanceOf(user1)).to.equal(amounts[0]);
