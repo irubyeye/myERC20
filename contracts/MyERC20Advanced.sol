@@ -466,8 +466,6 @@ contract MyERC20Advanced is IERC20, Ownable {
 
         _isVoted[msg.sender] = _votingId;
 
-        //_voters[_votingId].push(msg.sender);
-
         if (!_wasPriceInVoting[_votingId][_price]) {
             _votedPrices[_votingId].push(_price);
             _wasPriceInVoting[_votingId][_price] = true;
