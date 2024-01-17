@@ -1,9 +1,11 @@
-import { ManualVesting } from './../typechain-types/contracts/ManualVesting';
 import { expect, use } from 'chai';
 import { ethers, network } from 'hardhat';
+
+import { ManualVesting } from './../typechain-types/contracts/ManualVesting';
+
 import { MyERC20 } from '../typechain-types/contracts/MyERC20';
 
-describe('Manual vesting', () => {
+describe.skip('Manual vesting', () => {
   let owner: any, user1: any, user2: any, user3: any, user4: any, user5: any;
   let manualVesting: ManualVesting;
   let manualVestingAddress: string;

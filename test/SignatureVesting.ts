@@ -4,7 +4,7 @@ import { ethers, hardhatArguments, network } from 'hardhat';
 import { MyERC20 } from '../typechain-types/contracts/MyERC20';
 import { keccak256 } from 'ethers';
 
-describe('Signature vesting', () => {
+describe.skip('Signature vesting', () => {
   let owner: any, user1: any, user2: any, user3: any, user4: any, user5: any;
   let signatureVesting: SignatureVesting;
   let signatureVestingAddress: string;

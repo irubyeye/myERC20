@@ -3,12 +3,14 @@ pragma solidity ^0.8.19;
 
 import "../node_modules/@openzeppelin/contracts/token/ERC20/IERC20.sol";
 import "../node_modules/@openzeppelin/contracts/access/Ownable.sol";
+import "./VotingLinkedList.sol";
 
 /**
  * @title MyERC20
  * @dev A simple ERC-20 token with additional features like voting and fee collection.
  */
 contract MyERC20Advanced is IERC20, Ownable {
+    VotingLinkedList public votingLinkedList;
     /**
      * @dev Mapping to save user balanses.
      */
@@ -34,13 +36,10 @@ contract MyERC20Advanced is IERC20, Ownable {
      */
     mapping(uint256 => mapping(uint256 => uint256)) private _pricePower;
 
-    mapping(uint256 => mapping(uint256 => bool)) private _wasPriceInVoting;
+    mapping(uint256 => mapping(uint256 => bytes32)) private _wasPriceInVoting;
 
-    mapping(uint256 => uint256[]) private _votedPrices;
-
-    mapping(uint256 => address[]) private _voters;
-
-    mapping(uint256 => mapping(address => uint256[])) private _votingUserParams;
+    mapping(uint256 => mapping(address => uint256[2]))
+        private _votingUserParams;
 
     /**
      * @dev Current token price variable
@@ -130,9 +129,13 @@ contract MyERC20Advanced is IERC20, Ownable {
      * @dev Constructor to initialize the contract.
      * @param _votingTime The duration of each voting round.
      */
-    constructor(uint256 _votingTime) Ownable(msg.sender) IERC20() {
+    constructor(
+        uint256 _votingTime,
+        VotingLinkedList _linkedList
+    ) Ownable(msg.sender) IERC20() {
         _timeToVote = _votingTime;
         _mint(owner(), 100000000);
+        votingLinkedList = _linkedList;
     }
 
     /**
@@ -433,7 +436,10 @@ contract MyERC20Advanced is IERC20, Ownable {
      * @dev Function for an address to vote on a specific price during a voting round.
      * @param _price The price to vote for.
      */
-    function vote(uint256 _price) external canVote {
+    function vote(
+        uint256 _price,
+        bytes32 _indexToInsert
+    ) external canVote returns (bool) {
         if (!_isVotingInProgress[_votingId]) {
             require(
                 _balances[msg.sender] >= getStartVotingThreshold(),
@@ -442,11 +448,27 @@ contract MyERC20Advanced is IERC20, Ownable {
             _votingId++;
             _isVotingInProgress[_votingId] = true;
             _votingEndTime = block.timestamp + _timeToVote;
+
             emit VotingStarted(
                 block.timestamp,
                 block.timestamp + _timeToVote,
                 _votePrice
             );
+
+            bytes32 priceId = votingLinkedList.addEntry(
+                _price,
+                _balances[msg.sender]
+            );
+
+            uint256 userBalance = _balances[msg.sender];
+            _votingUserParams[_votingId][msg.sender][0] = _price;
+            _votingUserParams[_votingId][msg.sender][1] = userBalance;
+
+            _isVoted[msg.sender] = _votingId;
+
+            _wasPriceInVoting[_votingId][_price] = priceId;
+
+            return true;
         }
 
         require(
@@ -456,25 +478,48 @@ contract MyERC20Advanced is IERC20, Ownable {
 
         require(_isVoted[msg.sender] != _votingId, "Already voted!");
 
-        _pricePower[_votingId][_price] += _balances[msg.sender];
-
-        if (
-            _pricePower[_votingId][_price] > _pricePower[_votingId][_votePrice]
-        ) {
-            _votePrice = _price;
-        }
-
-        _isVoted[msg.sender] = _votingId;
-
-        if (!_wasPriceInVoting[_votingId][_price]) {
-            _votedPrices[_votingId].push(_price);
-            _wasPriceInVoting[_votingId][_price] = true;
-        }
-
-        _votingUserParams[_votingId][msg.sender][0] = _price;
-        _votingUserParams[_votingId][msg.sender][1] = _balances[msg.sender];
+        voteAndStorePricePower(_price, msg.sender, _indexToInsert);
 
         emit Voted(msg.sender, _price, _votePrice);
+
+        return true;
+    }
+
+    function voteAndStorePricePower(
+        uint256 _price,
+        address _userAddr,
+        bytes32 _indexToInsert
+    ) internal {
+        bytes32 priceId = _wasPriceInVoting[_votingId][_price];
+
+        if (priceId == 0) {
+            uint256 userBalance = _balances[_userAddr];
+
+            _votingUserParams[_votingId][msg.sender][0] = _price;
+            _votingUserParams[_votingId][msg.sender][1] = userBalance;
+
+            priceId = votingLinkedList.insertAtIndex(
+                _indexToInsert,
+                _price,
+                _balances[_userAddr]
+            );
+
+            _wasPriceInVoting[_votingId][_price] = priceId;
+            _pricePower[_votingId][_price] = _balances[_userAddr];
+        } else {
+            uint256 userBalance = _balances[_userAddr];
+            uint256 currPricePower = _pricePower[_votingId][_price];
+
+            currPricePower += userBalance;
+
+            votingLinkedList.updatePower(priceId, currPricePower);
+            votingLinkedList.moveEntry(priceId, _indexToInsert);
+
+            _pricePower[_votingId][_price] += userBalance;
+
+            _votingUserParams[_votingId][msg.sender][0] = _price;
+            _votingUserParams[_votingId][msg.sender][1] = userBalance;
+        }
     }
 
     function changePricePower(address _userAddress) private {
@@ -482,7 +527,7 @@ contract MyERC20Advanced is IERC20, Ownable {
             _isVotingInProgress[_votingId] &&
             _isVoted[_userAddress] == _votingId
         ) {
-            uint256[] memory voteData = _votingUserParams[_votingId][
+            uint256[2] memory voteData = _votingUserParams[_votingId][
                 _userAddress
             ];
             uint256 votedPrice = voteData[0];
@@ -513,23 +558,23 @@ contract MyERC20Advanced is IERC20, Ownable {
         }
     }
 
-    function getPricesPowersArray() external view returns (uint256[][] memory) {
-        uint256[] memory votedPrices = _votedPrices[_votingId];
-        uint256[][] memory pricesPowersArray = new uint256[][](
-            votedPrices.length
-        );
+    // function getPricesPowersArray() external view returns (uint256[][] memory) {
+    //     uint256[] memory votedPrices = _votedPrices[_votingId];
+    //     uint256[][] memory pricesPowersArray = new uint256[][](
+    //         votedPrices.length
+    //     );
 
-        for (uint256 i = 0; i < votedPrices.length; i++) {
-            uint256[] memory pricePowerArray = new uint256[](2);
+    //     for (uint256 i = 0; i < votedPrices.length; i++) {
+    //         uint256[] memory pricePowerArray = new uint256[](2);
 
-            pricePowerArray[0] = votedPrices[i];
-            pricePowerArray[1] = _pricePower[_votingId][votedPrices[i]];
+    //         pricePowerArray[0] = votedPrices[i];
+    //         pricePowerArray[1] = _pricePower[_votingId][votedPrices[i]];
 
-            pricesPowersArray[i] = pricePowerArray;
-        }
+    //         pricesPowersArray[i] = pricePowerArray;
+    //     }
 
-        return pricesPowersArray;
-    }
+    //     return pricesPowersArray;
+    // }
 
     /**
      * @dev Function to end a voting round and set the token price to the winning voted price.

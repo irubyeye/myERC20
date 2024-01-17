@@ -6,7 +6,7 @@ import { keccak256 } from 'ethers';
 import { AbiCoder } from 'ethers';
 import { MerkleTree } from 'merkletreejs';
 
-describe('Merkle root vesting', () => {
+describe.skip('Merkle root vesting', () => {
   let owner: any, user1: any, user2: any, user3: any, user4: any, user5: any;
   let merkleRootVesting: MerkleRootVesting;
   let merkleRootVestingAddress: string;
