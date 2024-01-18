@@ -132,54 +132,6 @@ contract VotingLinkedList {
         return id;
     }
 
-    // function moveEntry(bytes32 _id, bytes32 _newPrev) public returns (bool) {
-    // Object memory currEntry = objects[_id];
-    // Object memory oldPrev = objects[_newPrev];
-
-    // require(_id != 0, "Price id cannot be 0");
-
-    // require(
-    //     (currEntry.power >= oldPrev.power) || (_newPrev == 0x0),
-    //     "Inserted power should be greater than or equal to the left element or inserting at the beginning"
-    // );
-
-    // require(
-    //     (currEntry.power < objects[oldPrev.next].power) ||
-    //         (oldPrev.next == 0x0),
-    //     "Inserted power should be less than the right element or insert at the end"
-    // );
-
-    //     objects[currEntry.prev].next = currEntry.next;
-    //     objects[currEntry.next].prev = currEntry.prev;
-
-    //     if (_newPrev == 0x0) {
-    //         if (currEntry.power <= objects[head].power) {
-    //             objects[head].prev = _id;
-    //             currEntry.next = head;
-    //             currEntry.prev = 0x0;
-    //             head = _id;
-    //         } else if (currEntry.power >= objects[tail].power) {
-    //             objects[tail].next = _id;
-    //             currEntry.prev = tail;
-    //             currEntry.next = 0x0;
-    //             tail = _id;
-    //         } else {
-    //             revert("Incorrect data!");
-    //         }
-    //     } else {
-    //         currEntry.next = oldPrev.next;
-    //         currEntry.prev = _newPrev;
-    //         objects[oldPrev.next].prev = _id;
-    //         oldPrev.next = _id;
-
-    //         objects[_newPrev] = oldPrev;
-    //     }
-
-    //     objects[_id] = currEntry;
-
-    //     return true;
-    // }
-
     function moveEntry(bytes32 _id, bytes32 _newPrev) external {
         Object memory currEntry = objects[_id];
         Object memory oldPrevs = objects[_newPrev];

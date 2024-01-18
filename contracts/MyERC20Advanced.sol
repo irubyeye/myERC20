@@ -32,12 +32,13 @@ contract MyERC20Advanced is IERC20, Ownable {
     mapping(address => uint256) private _isVoted;
 
     /**
-     * @dev Price power for each price in a specific voting round
+     * @dev Mapping to store whether an price has voted in a specific voting round
      */
-    mapping(uint256 => mapping(uint256 => uint256)) private _pricePower;
-
     mapping(uint256 => mapping(uint256 => bytes32)) private _wasPriceInVoting;
 
+    /**
+     * @dev Mapping to store user decision in voting with his params
+     */
     mapping(uint256 => mapping(address => VotingUserParams))
         private _votingUserParams;
 
@@ -136,11 +137,13 @@ contract MyERC20Advanced is IERC20, Ownable {
      */
     constructor(
         uint256 _votingTime,
-        VotingLinkedList _linkedList
+        VotingLinkedList _linkedList,
+        uint256 _price
     ) Ownable(msg.sender) IERC20() {
         _timeToVote = _votingTime;
         _mint(owner(), 100000000);
         votingLinkedList = _linkedList;
+        _tokenPrice = _price;
     }
 
     /**
@@ -156,6 +159,7 @@ contract MyERC20Advanced is IERC20, Ownable {
 
     /**
      * @dev Modifier to check if the contract is not in a voting round.
+     * @dev used in elder version of myERC20
      */
     modifier isNotInVoting() {
         require(
@@ -225,16 +229,6 @@ contract MyERC20Advanced is IERC20, Ownable {
     }
 
     /**
-     * @dev Function to get the price power.
-     * @return The power of certain price in the current voting.
-     */
-    function _getPowerOfVotingPrice(
-        uint256 _price
-    ) external view returns (uint256) {
-        return _pricePower[_votingId][_price];
-    }
-
-    /**
      * @dev Function to get the total token supply.
      * @return The total token supply.
      */
@@ -257,10 +251,11 @@ contract MyERC20Advanced is IERC20, Ownable {
      * @param _amount The amount of tokens to transfer.
      * @return A boolean indicating the success of the transfer.
      */
-    function transfer(
+    function transferTo(
         address _recipient,
-        uint256 _amount
-    ) external isNotInVoting returns (bool) {
+        uint256 _amount,
+        bytes32 _indexToInsert
+    ) external returns (bool) {
         require(
             _balances[msg.sender] >= _amount,
             "Not enough tokens to transfer!"
@@ -269,6 +264,27 @@ contract MyERC20Advanced is IERC20, Ownable {
 
         _balances[msg.sender] -= _amount;
         _balances[_recipient] += _amount;
+
+        changePricePower(msg.sender, _indexToInsert);
+
+        emit Transfer(msg.sender, _recipient, _amount);
+        return true;
+    }
+
+    function transfer(
+        address _recipient,
+        uint256 _amount
+    ) external returns (bool) {
+        require(
+            _balances[msg.sender] >= _amount,
+            "Not enough tokens to transfer!"
+        );
+        require(_recipient != address(0), "Recipient can not be 0!");
+
+        _balances[msg.sender] -= _amount;
+        _balances[_recipient] += _amount;
+
+        changePricePower(msg.sender, 0);
 
         emit Transfer(msg.sender, _recipient, _amount);
         return true;
@@ -313,12 +329,9 @@ contract MyERC20Advanced is IERC20, Ownable {
     function transferFrom(
         address _sender,
         address _recipient,
-        uint256 _amount
+        uint256 _amount,
+        bytes32 _indexToInsert
     ) external returns (bool) {
-        require(
-            !(_isVotingInProgress[_votingId] && _isVoted[_sender] == _votingId),
-            "You can not perform this because owner is in voting!"
-        );
         require(_balances[_sender] >= _amount, "Not enough tokens!");
         require(_allowances[_sender][msg.sender] >= _amount);
 
@@ -326,6 +339,27 @@ contract MyERC20Advanced is IERC20, Ownable {
         _balances[_recipient] += _amount;
 
         _allowances[_sender][msg.sender] -= _amount;
+
+        changePricePower(_sender, _indexToInsert);
+
+        emit Transfer(_sender, _recipient, _amount);
+        return true;
+    }
+
+    function transferFrom(
+        address _sender,
+        address _recipient,
+        uint256 _amount
+    ) external returns (bool) {
+        require(_balances[_sender] >= _amount, "Not enough tokens!");
+        require(_allowances[_sender][msg.sender] >= _amount);
+
+        _balances[_sender] -= _amount;
+        _balances[_recipient] += _amount;
+
+        _allowances[_sender][msg.sender] -= _amount;
+
+        changePricePower(_sender, 0);
 
         emit Transfer(_sender, _recipient, _amount);
         return true;
@@ -405,7 +439,7 @@ contract MyERC20Advanced is IERC20, Ownable {
     /**
      * @dev Function to handle buying tokens.
      */
-    function buy() external payable isNotInVoting {
+    function buy(bytes32 _indexToInsert) external payable {
         require(msg.value > 0, "Value must be greater than 0!");
 
         uint256 tokensToMint = msg.value / _tokenPrice;
@@ -418,6 +452,8 @@ contract MyERC20Advanced is IERC20, Ownable {
 
         _mint(msg.sender, finalTokensToMint);
 
+        changePricePower(msg.sender, _indexToInsert);
+
         burnFees();
 
         emit Buy(msg.sender, finalTokensToMint, msg.value);
@@ -426,7 +462,7 @@ contract MyERC20Advanced is IERC20, Ownable {
     /**
      * @dev Function to handle selling tokens.
      */
-    function sell(uint256 _amount) external isNotInVoting {
+    function sell(uint256 _amount, bytes32 _indexToInsert) external {
         require(_balances[msg.sender] >= _amount, "Not enough tokens to sell!");
 
         uint256 feeAmount = (_amount * _buySellFeePercentage) / 100;
@@ -441,6 +477,8 @@ contract MyERC20Advanced is IERC20, Ownable {
 
         uint256 earnings = finalTokensToBurn * _tokenPrice;
         payable(msg.sender).transfer(earnings);
+
+        changePricePower(msg.sender, _indexToInsert);
 
         emit Sell(msg.sender, finalTokensToBurn, earnings);
     }
@@ -532,8 +570,6 @@ contract MyERC20Advanced is IERC20, Ownable {
 
             uint256 newPower = currPricePower + userBalance;
 
-            _pricePower[_votingId][_price] = newPower;
-
             _votingUserParams[_votingId][_userAddr].priceId = priceId;
             _votingUserParams[_votingId][_userAddr].power = userBalance;
 
@@ -544,59 +580,45 @@ contract MyERC20Advanced is IERC20, Ownable {
         }
     }
 
-    // function changePricePower(address _userAddress, bytes32 _indexToInsert) private {
-    //     if (
-    //         _isVotingInProgress[_votingId] &&
-    //         _isVoted[_userAddress] == _votingId
-    //     ) {
-    //         uint256[2] memory voteData = _votingUserParams[_votingId][
-    //             _userAddress
-    //         ];
-    //         uint256 votedPrice = voteData[0];
-    //         uint256 votedPower = voteData[1];
-    //         uint256 currUserBalance = _balances[_userAddress];
+    function changePricePower(
+        address _userAddress,
+        bytes32 _indexToInsert
+    ) private {
+        if (
+            _isVotingInProgress[_votingId] &&
+            _isVoted[_userAddress] == _votingId
+        ) {
+            VotingUserParams memory voteData = _votingUserParams[_votingId][
+                _userAddress
+            ];
 
-    //         if (currUserBalance > votedPower) {
-    //             _pricePower[_votingId][votedPrice] += (currUserBalance -
-    //                 votedPower);
+            bytes32 votedPrice = voteData.priceId;
 
-    //             _votingUserParams[_votingId][_userAddress][1] = currUserBalance;
-    //         } else {
-    //             _pricePower[_votingId][votedPrice] -= (votedPower -
-    //                 currUserBalance);
+            uint256 votedPower = voteData.power;
+            uint256 currUserBalance = _balances[_userAddress];
+            uint256 currPricePower;
 
-    //             _votingUserParams[_votingId][_userAddress][1] = currUserBalance;
-    //         }
+            (, , , currPricePower) = votingLinkedList.getEntry(votedPrice);
 
-    //         if (
-    //             _pricePower[_votingId][votedPrice] >
-    //             _pricePower[_votingId][_votePrice]
-    //         ) {
-    //             _votePrice = votedPrice;
-    //         } else {
-    //             uint256 newLeaderPrice;
-    //             for(uint256 i = 0; i < _votedPrices[])
-    //         }
-    //     }
-    // }
+            if (currUserBalance > votedPower) {
+                currPricePower += (currUserBalance - votedPower);
 
-    // function getPricesPowersArray() external view returns (uint256[][] memory) {
-    //     uint256[] memory votedPrices = _votedPrices[_votingId];
-    //     uint256[][] memory pricesPowersArray = new uint256[][](
-    //         votedPrices.length
-    //     );
+                _votingUserParams[_votingId][_userAddress]
+                    .power = currUserBalance;
 
-    //     for (uint256 i = 0; i < votedPrices.length; i++) {
-    //         uint256[] memory pricePowerArray = new uint256[](2);
+                votingLinkedList.updatePower(votedPrice, currPricePower);
+                votingLinkedList.moveEntry(votedPrice, _indexToInsert);
+            } else {
+                currPricePower -= votedPower - currUserBalance;
 
-    //         pricePowerArray[0] = votedPrices[i];
-    //         pricePowerArray[1] = _pricePower[_votingId][votedPrices[i]];
+                _votingUserParams[_votingId][_userAddress]
+                    .power = currUserBalance;
 
-    //         pricesPowersArray[i] = pricePowerArray;
-    //     }
-
-    //     return pricesPowersArray;
-    // }
+                votingLinkedList.updatePower(votedPrice, currPricePower);
+                votingLinkedList.moveEntry(votedPrice, _indexToInsert);
+            }
+        }
+    }
 
     /**
      * @dev Function to end a voting round and set the token price to the winning voted price.
