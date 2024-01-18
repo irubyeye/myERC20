@@ -54,6 +54,52 @@ describe('Advanced voting system', () => {
     it('Should start voting', async () => {
       const number = ethers.encodeBytes32String('');
 
+      await myERC20Advanced.transfer(user1.address, 10000000);
+      await myERC20Advanced.transfer(user2.address, 20000000);
+      await myERC20Advanced.transfer(user3.address, 5000000);
+
+      await expect(myERC20Advanced.connect(user3).vote(100, number)).to.emit(
+        myERC20Advanced,
+        'VotingStarted',
+      );
+
+      await myERC20Advanced.connect(user2).vote(10, number);
+
+      let result = await votingLinkedList.getAllEntries();
+
+      await myERC20Advanced.connect(user1).vote(1000, result[0][0]);
+
+      result = await votingLinkedList.getAllEntries();
+
+      console.log(await votingLinkedList.getAllEntries());
+
+      await myERC20Advanced.connect(owner).vote(1000, result[2][0]);
+
+      console.log(await votingLinkedList.getAllEntries());
+    });
+    xit('Should proper sort different new prices in the linked list', async () => {
+      const number = ethers.encodeBytes32String('');
+
+      await myERC20Advanced.transfer(user1.address, 10000000);
+      await myERC20Advanced.transfer(user2.address, 20000000);
+      await myERC20Advanced.transfer(user3.address, 5000000);
+
+      await expect(myERC20Advanced.connect(user3).vote(100, number)).to.emit(
+        myERC20Advanced,
+        'VotingStarted',
+      );
+
+      await myERC20Advanced.connect(user2).vote(10, number);
+
+      let result = await votingLinkedList.getAllEntries();
+
+      await myERC20Advanced.connect(user1).vote(1000, result[0][0]);
+
+      console.log(await votingLinkedList.getAllEntries());
+    });
+    it('Should update vote Power', async () => {
+      const number = ethers.encodeBytes32String('');
+
       await myERC20Advanced.transfer(user1.address, 20000000);
       await myERC20Advanced.transfer(user2.address, 70000000);
 
@@ -62,12 +108,13 @@ describe('Advanced voting system', () => {
         'VotingStarted',
       );
 
-      await myERC20Advanced.connect(user1).vote(1000, number);
       const result = await votingLinkedList.getAllEntries();
 
-      await myERC20Advanced.connect(user2).vote(10, result[1][0]);
+      await votingLinkedList.updatePower(result[0][0], 1234);
 
-      console.log(await votingLinkedList.getAllEntries());
+      const resultEntry = await votingLinkedList.getEntry(result[0][0]);
+
+      expect(resultEntry[3]).to.equal(1234);
     });
   });
 });

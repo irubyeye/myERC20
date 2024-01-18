@@ -98,21 +98,25 @@ contract VotingLinkedList {
                 object.next = head;
                 object.prev = 0x0;
                 head = id;
+
+                objects[id] = object;
             } else if (_power >= objects[tail].power) {
                 objects[tail].next = id;
                 object.prev = tail;
                 object.next = 0x0;
                 tail = id;
+
+                objects[id] = object;
             } else {
                 revert("Incorrect data!");
             }
+        } else {
+            objects[id] = object;
+
+            objects[_prev].next = id;
+
+            objects[nextId].prev = id;
         }
-
-        objects[id] = object;
-
-        objects[_prev].next = id;
-
-        objects[nextId].prev = id;
 
         length++;
 
@@ -124,50 +128,114 @@ contract VotingLinkedList {
             object.price,
             object.power
         );
+
         return id;
     }
 
-    function moveEntry(bytes32 _id, bytes32 _newPrev) public returns (bool) {
-        require(length > 0, "LinkedList is empty");
-        require(objects[_id].price > 0, "Entry not found");
+    // function moveEntry(bytes32 _id, bytes32 _newPrev) public returns (bool) {
+    // Object memory currEntry = objects[_id];
+    // Object memory oldPrev = objects[_newPrev];
 
-        bytes32 currentPrev = objects[_id].prev;
-        bytes32 currentNext = objects[_id].next;
+    // require(_id != 0, "Price id cannot be 0");
 
-        require(
-            (_newPrev != 0x0 &&
-                objects[currentPrev].power <= objects[_id].power) ||
-                (_newPrev == 0x0 && currentPrev == 0x0),
-            "Inserted power should be greater than or equal to the left element"
-        );
-        require(
-            (currentNext != 0x0 &&
-                objects[currentNext].power > objects[_id].power) ||
-                (currentNext == 0x0 && _newPrev != 0x0),
-            "Inserted power should be less than the right element"
-        );
+    // require(
+    //     (currEntry.power >= oldPrev.power) || (_newPrev == 0x0),
+    //     "Inserted power should be greater than or equal to the left element or inserting at the beginning"
+    // );
 
-        if (_newPrev == 0x0) {
-            head = _id;
+    // require(
+    //     (currEntry.power < objects[oldPrev.next].power) ||
+    //         (oldPrev.next == 0x0),
+    //     "Inserted power should be less than the right element or insert at the end"
+    // );
+
+    //     objects[currEntry.prev].next = currEntry.next;
+    //     objects[currEntry.next].prev = currEntry.prev;
+
+    //     if (_newPrev == 0x0) {
+    //         if (currEntry.power <= objects[head].power) {
+    //             objects[head].prev = _id;
+    //             currEntry.next = head;
+    //             currEntry.prev = 0x0;
+    //             head = _id;
+    //         } else if (currEntry.power >= objects[tail].power) {
+    //             objects[tail].next = _id;
+    //             currEntry.prev = tail;
+    //             currEntry.next = 0x0;
+    //             tail = _id;
+    //         } else {
+    //             revert("Incorrect data!");
+    //         }
+    //     } else {
+    //         currEntry.next = oldPrev.next;
+    //         currEntry.prev = _newPrev;
+    //         objects[oldPrev.next].prev = _id;
+    //         oldPrev.next = _id;
+
+    //         objects[_newPrev] = oldPrev;
+    //     }
+
+    //     objects[_id] = currEntry;
+
+    //     return true;
+    // }
+
+    function moveEntry(bytes32 _id, bytes32 _newPrev) external {
+        Object memory currEntry = objects[_id];
+        Object memory oldPrevs = objects[_newPrev];
+
+        require(_id != 0, "Price id cannot be 0");
+
+        if (_id == _newPrev) {
+            require(
+                (currEntry.power >= objects[currEntry.prev].power) &&
+                    (currEntry.power <= objects[currEntry.next].power ||
+                        objects[currEntry.next].next == 0),
+                "Need to recompute!"
+            );
         } else {
-            objects[_newPrev].next = _id;
+            require(
+                (currEntry.power >= oldPrevs.power) || (_newPrev == 0x0),
+                "Inserted power should be greater than or equal to the left element or inserting at the beginning"
+            );
+
+            require(
+                (currEntry.power < objects[oldPrevs.next].power) ||
+                    (oldPrevs.next == 0x0),
+                "Inserted power should be less than the right element or insert at the end"
+            );
+
+            bytes32 oldPrev = objects[_id].prev;
+            bytes32 oldNext = objects[_id].next;
+
+            if (oldPrev != bytes32(0)) {
+                objects[oldPrev].next = oldNext;
+            } else {
+                head = oldNext;
+            }
+
+            if (oldNext != bytes32(0)) {
+                objects[oldNext].prev = oldPrev;
+            } else {
+                tail = oldPrev;
+            }
+
+            objects[_id].prev = _newPrev;
+
+            if (_newPrev != bytes32(0)) {
+                objects[_id].next = objects[_newPrev].next;
+                objects[_newPrev].next = _id;
+            } else {
+                objects[_id].next = head;
+                head = _id;
+            }
+
+            if (objects[_id].next != bytes32(0)) {
+                objects[objects[_id].next].prev = _id;
+            } else {
+                tail = _id;
+            }
         }
-
-        objects[_id].prev = _newPrev;
-
-        if (currentPrev != 0x0) {
-            objects[currentPrev].next = currentNext;
-        } else {
-            head = currentNext;
-        }
-
-        if (currentNext != 0x0) {
-            objects[currentNext].prev = currentPrev;
-        } else {
-            tail = currentPrev;
-        }
-
-        return true;
     }
 
     function updatePower(bytes32 _id, uint256 _newPower) public returns (bool) {

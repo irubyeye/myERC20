@@ -38,8 +38,13 @@ contract MyERC20Advanced is IERC20, Ownable {
 
     mapping(uint256 => mapping(uint256 => bytes32)) private _wasPriceInVoting;
 
-    mapping(uint256 => mapping(address => uint256[2]))
+    mapping(uint256 => mapping(address => VotingUserParams))
         private _votingUserParams;
+
+    struct VotingUserParams {
+        bytes32 priceId;
+        uint256 power;
+    }
 
     /**
      * @dev Current token price variable
@@ -193,6 +198,14 @@ contract MyERC20Advanced is IERC20, Ownable {
      */
     function etherBalance() external view returns (uint256) {
         return address(this).balance;
+    }
+
+    function getVotingUserParams()
+        external
+        view
+        returns (VotingUserParams memory)
+    {
+        return _votingUserParams[_votingId][msg.sender];
     }
 
     /**
@@ -461,8 +474,8 @@ contract MyERC20Advanced is IERC20, Ownable {
             );
 
             uint256 userBalance = _balances[msg.sender];
-            _votingUserParams[_votingId][msg.sender][0] = _price;
-            _votingUserParams[_votingId][msg.sender][1] = userBalance;
+            _votingUserParams[_votingId][msg.sender].priceId = priceId;
+            _votingUserParams[_votingId][msg.sender].power = userBalance;
 
             _isVoted[msg.sender] = _votingId;
 
@@ -478,7 +491,10 @@ contract MyERC20Advanced is IERC20, Ownable {
 
         require(_isVoted[msg.sender] != _votingId, "Already voted!");
 
-        voteAndStorePricePower(_price, msg.sender, _indexToInsert);
+        address userAddr = msg.sender;
+        voteAndStorePricePower(_price, userAddr, _indexToInsert);
+
+        _isVoted[msg.sender] = _votingId;
 
         emit Voted(msg.sender, _price, _votePrice);
 
@@ -489,74 +505,80 @@ contract MyERC20Advanced is IERC20, Ownable {
         uint256 _price,
         address _userAddr,
         bytes32 _indexToInsert
-    ) internal {
+    ) internal returns (bool) {
         bytes32 priceId = _wasPriceInVoting[_votingId][_price];
+        uint256 userBalance = _balances[_userAddr];
+
+        require(userBalance > 0, "Balance is 0");
 
         if (priceId == 0) {
-            uint256 userBalance = _balances[_userAddr];
-
-            _votingUserParams[_votingId][msg.sender][0] = _price;
-            _votingUserParams[_votingId][msg.sender][1] = userBalance;
-
             priceId = votingLinkedList.insertAtIndex(
                 _indexToInsert,
                 _price,
                 _balances[_userAddr]
             );
 
+            _votingUserParams[_votingId][_userAddr].priceId = priceId;
+            _votingUserParams[_votingId][_userAddr].power = userBalance;
+
             _wasPriceInVoting[_votingId][_price] = priceId;
-            _pricePower[_votingId][_price] = _balances[_userAddr];
+
+            return true;
         } else {
-            uint256 userBalance = _balances[_userAddr];
-            uint256 currPricePower = _pricePower[_votingId][_price];
+            uint256 currPricePower;
+            (, , , currPricePower) = votingLinkedList.getEntry(priceId);
 
-            currPricePower += userBalance;
+            require(currPricePower != 0, "Current price power is 0 :(");
 
-            votingLinkedList.updatePower(priceId, currPricePower);
+            uint256 newPower = currPricePower + userBalance;
+
+            _pricePower[_votingId][_price] = newPower;
+
+            _votingUserParams[_votingId][_userAddr].priceId = priceId;
+            _votingUserParams[_votingId][_userAddr].power = userBalance;
+
+            votingLinkedList.updatePower(priceId, newPower);
             votingLinkedList.moveEntry(priceId, _indexToInsert);
 
-            _pricePower[_votingId][_price] += userBalance;
-
-            _votingUserParams[_votingId][msg.sender][0] = _price;
-            _votingUserParams[_votingId][msg.sender][1] = userBalance;
+            return true;
         }
     }
 
-    function changePricePower(address _userAddress) private {
-        if (
-            _isVotingInProgress[_votingId] &&
-            _isVoted[_userAddress] == _votingId
-        ) {
-            uint256[2] memory voteData = _votingUserParams[_votingId][
-                _userAddress
-            ];
-            uint256 votedPrice = voteData[0];
-            uint256 votedPower = voteData[1];
-            uint256 currUserBalance = _balances[_userAddress];
+    // function changePricePower(address _userAddress, bytes32 _indexToInsert) private {
+    //     if (
+    //         _isVotingInProgress[_votingId] &&
+    //         _isVoted[_userAddress] == _votingId
+    //     ) {
+    //         uint256[2] memory voteData = _votingUserParams[_votingId][
+    //             _userAddress
+    //         ];
+    //         uint256 votedPrice = voteData[0];
+    //         uint256 votedPower = voteData[1];
+    //         uint256 currUserBalance = _balances[_userAddress];
 
-            if (currUserBalance > votedPower) {
-                _pricePower[_votingId][votedPrice] += (currUserBalance -
-                    votedPower);
+    //         if (currUserBalance > votedPower) {
+    //             _pricePower[_votingId][votedPrice] += (currUserBalance -
+    //                 votedPower);
 
-                _votingUserParams[_votingId][_userAddress][1] = currUserBalance;
-            } else {
-                _pricePower[_votingId][votedPrice] -= (votedPower -
-                    currUserBalance);
+    //             _votingUserParams[_votingId][_userAddress][1] = currUserBalance;
+    //         } else {
+    //             _pricePower[_votingId][votedPrice] -= (votedPower -
+    //                 currUserBalance);
 
-                _votingUserParams[_votingId][_userAddress][1] = currUserBalance;
-            }
+    //             _votingUserParams[_votingId][_userAddress][1] = currUserBalance;
+    //         }
 
-            // if (
-            //     _pricePower[_votingId][votedPrice] >
-            //     _pricePower[_votingId][_votePrice]
-            // ) {
-            //     _votePrice = votedPrice;
-            // } else {
-            //     uint256 newLeaderPrice;
-            //     for(uint256 i = 0; i < _votedPrices[])
-            // }
-        }
-    }
+    //         if (
+    //             _pricePower[_votingId][votedPrice] >
+    //             _pricePower[_votingId][_votePrice]
+    //         ) {
+    //             _votePrice = votedPrice;
+    //         } else {
+    //             uint256 newLeaderPrice;
+    //             for(uint256 i = 0; i < _votedPrices[])
+    //         }
+    //     }
+    // }
 
     // function getPricesPowersArray() external view returns (uint256[][] memory) {
     //     uint256[] memory votedPrices = _votedPrices[_votingId];
