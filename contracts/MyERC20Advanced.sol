@@ -216,7 +216,7 @@ contract MyERC20Advanced is IERC20, Ownable {
      * @dev Function to get the current token price.
      * @return The current token price.
      */
-    function _getTokenPrice() external view returns (uint256) {
+    function getTokenPrice() external view returns (uint256) {
         return _tokenPrice;
     }
 
@@ -224,7 +224,7 @@ contract MyERC20Advanced is IERC20, Ownable {
      * @dev Function to get the current leader voting price.
      * @return The current token price.
      */
-    function _getVotingPrice() external view returns (uint256) {
+    function getVotingPrice() external view returns (uint256) {
         return _votePrice;
     }
 
@@ -280,6 +280,8 @@ contract MyERC20Advanced is IERC20, Ownable {
             "Not enough tokens to transfer!"
         );
         require(_recipient != address(0), "Recipient can not be 0!");
+
+        require(_amount > 0, "Amount must be gt 0!");
 
         _balances[msg.sender] -= _amount;
         _balances[_recipient] += _amount;
@@ -530,7 +532,7 @@ contract MyERC20Advanced is IERC20, Ownable {
         require(_isVoted[msg.sender] != _votingId, "Already voted!");
 
         address userAddr = msg.sender;
-        voteAndStorePricePower(_price, userAddr, _indexToInsert);
+        voteAndStorePricePower(_price, msg.sender, _indexToInsert);
 
         _isVoted[msg.sender] = _votingId;
 

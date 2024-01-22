@@ -4,9 +4,9 @@ import { ethers, network } from 'hardhat';
 import { MyERC20Advanced } from './../typechain-types/contracts/MyERC20Advanced';
 import { VotingLinkedList } from './../typechain-types/contracts/VotingLinkedList';
 
-import type { HardhatEthersSigner } from '../node_modules/@nomicfoundation/hardhat-ethers/src/signers.ts';
+import type { HardhatEthersSigner } from '../node_modules/@nomicfoundation/hardhat-ethers/signers.ts';
 
-import { encodeBytes32String, hexlify, keccak256 } from 'ethers';
+const fc = require('fast-check');
 
 describe('Advanced voting system', () => {
   let owner: HardhatEthersSigner,
@@ -44,15 +44,12 @@ describe('Advanced voting system', () => {
       const addressERC: string = await myERC20Advanced.getAddress();
       const addressVoting: string = await votingLinkedList.getAddress();
 
-      console.log(addressERC, ' Address ERC');
-      console.log(addressVoting, ' Address Voting');
-
       expect(addressERC).to.not.equal(0);
       expect(addressVoting).to.not.equal(0);
     });
   });
   describe('Voting Process', () => {
-    it('Should proper work with replacement and adding new prices', async () => {
+    it('Should proper work with replacements and adding new prices', async () => {
       const number = ethers.encodeBytes32String('');
 
       await myERC20Advanced.transfer(user1.address, 10000000);
@@ -186,8 +183,6 @@ describe('Advanced voting system', () => {
 
       result = await votingLinkedList.getAllEntries();
 
-      console.log(result);
-
       expect(result[0][3]).to.equal(100);
     });
     it('Should recompute price power after user transfers tokens', async () => {
@@ -222,9 +217,45 @@ describe('Advanced voting system', () => {
 
       result = await votingLinkedList.getAllEntries();
 
-      console.log(result);
-
       expect(result[0][3]).to.equal(100);
+    });
+
+    it('Should buy tokens', async () => {
+      const number = ethers.encodeBytes32String('');
+
+      await fc.assert(
+        fc.property(fc.nat(100), async (amount: number) => {
+          await myERC20Advanced
+            .connect(user1)
+            .buy(number, { value: ethers.parseEther(amount.toString()) });
+
+          await expect(
+            await myERC20Advanced.connect(user1).balanceOf(user1.address),
+          ).to.equal(0);
+        }),
+        { numRuns: 1000, verbose: true, endOnFailure: false },
+      );
+    });
+
+    it('Should transfer', async () => {
+      const number = ethers.encodeBytes32String('');
+
+      // const result = await myERC20Advanced.transfer(user1.address, 71478460);
+
+      // expect(await myERC20Advanced.balanceOf(user1.address)).to.equal(71478460);
+
+      // console.log(result);
+
+      await fc.assert(
+        fc.property(fc.nat({ max: 100000000 }), async (amount: number) => {
+          await myERC20Advanced.transfer(user1.address, amount);
+
+          expect(await myERC20Advanced.balanceOf(user1.address)).to.equal(
+            amount,
+          );
+        }),
+        { numRuns: 1000, verbose: true, endOnFailure: false },
+      );
     });
   });
 });
